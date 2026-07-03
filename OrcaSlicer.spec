@@ -36,6 +36,7 @@ BuildRequires:  webkit2gtk4.1-devel
 BuildRequires:  wget
 BuildRequires:  libcurl-devel
 BuildRequires:  procps-ng
+BuildRequires:  patchelf
 
 %description
 OrcaSlicer is a powerful and user-friendly slicing software designed for 3D printing enthusiasts. It provides advanced features and a streamlined interface to help users prepare their 3D models for printing with precision and ease. With support for a wide range of 3D printers and materials, OrcaSlicer is the go-to choice for both beginners and experienced makers in the 3D printing community.
