@@ -6,6 +6,8 @@ Summary:        OrcaSlicer is a tool for slicing 3D models for 3D printing.
 License:        GNU AFFERO GENERAL PUBLIC LICENSE
 Source0:        OrcaSlicer-%{version}.tar.gz
 
+Requires:       glx-utils
+
 BuildRequires:  autoconf
 BuildRequires:  automake
 BuildRequires:  cmake
