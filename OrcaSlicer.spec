@@ -38,6 +38,8 @@ BuildRequires:  libcurl-devel
 BuildRequires:  procps-ng
 BuildRequires:  patchelf
 
+%global install_dir /opt/OrcaSlicer
+
 %description
 OrcaSlicer is a powerful and user-friendly slicing software designed for 3D printing enthusiasts. It provides advanced features and a streamlined interface to help users prepare their 3D models for printing with precision and ease. With support for a wide range of 3D printers and materials, OrcaSlicer is the go-to choice for both beginners and experienced makers in the 3D printing community.
 
@@ -65,7 +67,7 @@ done
 
 # Resources
 install -d %{buildroot}%{install_dir}/resources
-cp -a %{src_artifacts}/package/resources/. %{buildroot}%{install_dir}/resources/
+cp -a build/package/resources/. %{buildroot}%{install_dir}/resources/
 # Launcher wrapper (uses fixed install path unlike the AppImage wrapper)
 install -d %{buildroot}%{_bindir}
 cat > %{buildroot}%{_bindir}/orca-slicer << 'EOF'
@@ -98,16 +100,16 @@ EOF
 chmod 0755 %{buildroot}%{_bindir}/orca-slicer
 
 # Desktop entry
-install -Dm644 %{src_artifacts}/src/dev-utils/platform/unix/com.orcaslicer.OrcaSlicer.desktop \
+install -Dm644 src/dev-utils/platform/unix/com.orcaslicer.OrcaSlicer.desktop \
     %{buildroot}%{_datadir}/applications/com.orcaslicer.OrcaSlicer.desktop
 # Icons (multiple sizes)
-install -Dm644 %{src_artifacts}/resources/images/OrcaSlicer_192px.png \
+install -Dm644 resources/images/OrcaSlicer_192px.png \
     %{buildroot}%{_datadir}/icons/hicolor/192x192/apps/OrcaSlicer.png
-install -Dm644 %{src_artifacts}/resources/images/OrcaSlicer_128px.png \
+install -Dm644 resources/images/OrcaSlicer_128px.png \
     %{buildroot}%{_datadir}/icons/hicolor/128x128/apps/OrcaSlicer.png
-install -Dm644 %{src_artifacts}/resources/images/OrcaSlicer_64.png \
+install -Dm644 resources/images/OrcaSlicer_64.png \
     %{buildroot}%{_datadir}/icons/hicolor/64x64/apps/OrcaSlicer.png
-install -Dm644 %{src_artifacts}/resources/images/OrcaSlicer_32px.png \
+install -Dm644 resources/images/OrcaSlicer_32px.png \
     %{buildroot}%{_datadir}/icons/hicolor/32x32/apps/OrcaSlicer.png
 %post
 /bin/touch --no-create %{_datadir}/icons/hicolor &>/dev/null || :
