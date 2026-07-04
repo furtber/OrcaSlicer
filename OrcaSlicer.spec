@@ -49,12 +49,12 @@ rm -rf build
 rm -rf deps/build
 export CXXFLAGS="${CXXFLAGS} -std=c++17 -Wno-error=deprecated-declarations"
 export CFLAGS="${CFLAGS} -Wno-error=deprecated-declarations"
-./build_linux.sh -j 4 -s -d -r
+./build_linux.sh -s -d -r
 
 %install
 # Application binary
 install -d %{buildroot}%{install_dir}/bin
-cp -a %{src_artifacts}/package/bin/. %{buildroot}%{install_dir}/bin/
+cp -a build/package/bin/. %{buildroot}%{install_dir}/bin/
 # Fix build-time RPATHs: replace with $ORIGIN so co-located libs are found
 # without relying on absolute build-machine paths (which rpmbuild rejects).
 for f in %{buildroot}%{install_dir}/bin/*; do
