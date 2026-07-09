@@ -1,5 +1,5 @@
 Name:           OrcaSlicer
-Version:        2.3.2
+Version:        2.4.2
 Release:        %autorelease
 Summary:        OrcaSlicer is a tool for slicing 3D models for 3D printing.
 
