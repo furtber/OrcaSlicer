@@ -794,8 +794,11 @@ bool MediaPlayCtrl::start_stream_service(bool *need_install)
         boost::asio::writable_pipe pipe_out(ctx);
         boost::asio::connect_pipe(pipe_in, pipe_out);
 
-        std::vector<std::string> source_args = { file_url2.data().AsInternal() };
-        std::vector<std::string> ffmpeg_args = { configss };
+        std::vector<std::string> source_args;
+        source_args.push_back(file_url2.data().AsInternal().ToStdString());
+
+        std::vector<std::string> ffmpeg_args;
+        ffmpeg_args.push_back(configss);
 
         boost::process::process process_source(
             ctx,
