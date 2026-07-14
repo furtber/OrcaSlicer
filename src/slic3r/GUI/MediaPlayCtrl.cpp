@@ -764,9 +764,9 @@ bool MediaPlayCtrl::start_stream_service(bool *need_install)
         std::vector<std::string> configss;
         boost::algorithm::split(configss, configs, boost::algorithm::is_any_of("\r\n"));
         configss.erase(std::remove(configss.begin(), configss.end(), std::string()), configss.end());
+#ifdef __WXMSW__
         boost::process::pipe intermediate;
         boost::filesystem::path start_dir(boost::filesystem::path(data_dir()) / "plugins");
-#ifdef __WXMSW__
         auto plugins_dir = boost::nowide::widen(data_dir()) + L"\\plugins\\";
         for (auto dll : {L"BambuSource.dll", L"live555.dll"}) {
             auto file_dll  = tools_dir + dll;
@@ -791,21 +791,20 @@ bool MediaPlayCtrl::start_stream_service(bool *need_install)
         */
         boost::asio::io_context ctx;
         boost::asio::readable_pipe pipe_in(ctx);
-        boost::asio::readable_pipe pipe_out(ctx);
+        boost::asio::writable_pipe pipe_out(ctx);
         boost::asio::connect_pipe(pipe_in, pipe_out);
 
         std::vector<std::string> source_args = { file_url2.data().AsInternal() };
+        std::vector<std::string> ffmpeg_args = { configss };
 
         boost::process::process process_source(
-            ctx.get_executor(),
+            ctx,
             file_source,
             source_args,
-            boost::process::process_start_dir(start_dir),
             boost::process::process_stdio{nullptr, pipe_out, nullptr},
             );
-        std::vector<std::string> ffmpeg_args = { configss };
         boost::process::process process_ffmpeg(
-            ctx.get_executor(),
+            ctx,
             file_ffmpeg,
             ffmpeg_args,
             boost::process::process_stdio{pipe_in, nullptr, nullptr}
