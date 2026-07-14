@@ -15,15 +15,13 @@
 #include <boost/nowide/cstdio.hpp>
 #include <boost/nowide/utf8_codecvt.hpp>
 #undef pid_t
-#include <boost/process.hpp>
+#include <boost/process/v2.hpp>
 #ifdef __WIN32__
 #include <boost/process/windows.hpp>
 #else
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #endif
-
-namespace boost { namespace process { using namespace v1; }}
 
 #include <wx/clipbrd.h>
 #include "wx/evtloop.h"
@@ -782,11 +780,20 @@ bool MediaPlayCtrl::start_stream_service(bool *need_install)
         boost::process::child process_ffmpeg(file_ffmpeg, configss, boost::process::windows::create_no_window, 
                                              boost::process::std_in < intermediate, boost::process::limit_handles);
 #else
+        /*
         boost::filesystem::permissions(file_source, boost::filesystem::owner_exe | boost::filesystem::add_perms);
         boost::filesystem::permissions(file_ffmpeg, boost::filesystem::owner_exe | boost::filesystem::add_perms);
         boost::process::child process_source(file_source, file_url2.data().AsInternal(), boost::process::start_dir(start_dir), 
                                              boost::process::std_out > intermediate, boost::process::limit_handles);
         boost::process::child process_ffmpeg(file_ffmpeg, configss, boost::process::std_in < intermediate, boost::process::limit_handles);
+        */
+        namespace bp2 = boost::process::v2;
+        boost::asio::io_context ctx;
+        bp2::pipe intermediate2(ctx);
+        std::vector<std::string> source_args = { file_url2.date().AsInternal() };
+        bp2::process process_source(ctx, file_source, source_args, bp2::process_start_dir{start_dir});
+        std::vector<std::string> ffmpeg_args = { configss };
+        bp2::process process_fmpeg(ctx, file_ffmpeg, ffmpeg_args);
 #endif
         process_source.detach();
         process_ffmpeg.detach();
