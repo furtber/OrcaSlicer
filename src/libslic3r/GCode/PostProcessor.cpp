@@ -4,6 +4,13 @@
 #include "libslic3r/format.hpp"
 #include "libslic3r/I18N.hpp"
 
+#include <boost/process/v1.hpp>
+// Falls die Version v1.hpp nicht existiert (je nach Boost-Release), nutzen Sie stattdessen:
+// #include <boost/process.hpp>
+
+// Und stellen Sie sicher, dass der Namespace-Alias auf V1 zeigt:
+namespace process = boost::process::v1;
+
 #include <boost/algorithm/string.hpp>
 #include <boost/log/trivial.hpp>
 #include <boost/format.hpp>
