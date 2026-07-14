@@ -415,28 +415,32 @@ endif ()
 include(OCCT/OCCT.cmake)
 include(OpenCV/OpenCV.cmake)
 
+#set(_dep_list
+#    dep_Boost
+#    dep_TBB
+#    ${OPENSSL_PKG}
+#    ${CURL_PKG}
+#    ${WXWIDGETS_PKG}
+#    dep_Cereal
+#    dep_Draco
+#    dep_NLopt
+#    dep_OpenVDB
+#    dep_OpenCSG
+#    dep_OpenCV
+#    dep_Eigen
+#    dep_CGAL
+#    dep_GLFW
+#    dep_OCCT
+#    ${FREETYPE_PKG}
+#    ${PNG_PKG}
+#    ${ZLIB_PKG}
+#    ${EXPAT_PKG}
+#    dep_libnoise
+#    )
 set(_dep_list
-    dep_Boost
-    dep_TBB
-    ${OPENSSL_PKG}
-    ${CURL_PKG}
     ${WXWIDGETS_PKG}
-    dep_Cereal
-    dep_Draco
-    dep_NLopt
-    dep_OpenVDB
-    dep_OpenCSG
-    dep_OpenCV
-    dep_Eigen
-    dep_CGAL
-    dep_GLFW
-    dep_OCCT
-    ${FREETYPE_PKG}
-    ${PNG_PKG}
-    ${ZLIB_PKG}
-    ${EXPAT_PKG}
     dep_libnoise
-    )
+)
 
 if (MSVC)
     # Experimental

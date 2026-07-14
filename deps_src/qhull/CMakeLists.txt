@@ -7,27 +7,63 @@
 #
 # Created by modification of the original qhull CMakeLists.
 # Lukas Matena (25.7.2018), lukasmatena@seznam.cz
+# see bug report: https://debian.org
 
-# see bug report: https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=925540
+# 1. Erkennung via pkg-config
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(QHULL QUIET qhull_r)
 
-find_package(Qhull 7.2 QUIET)
+# FIX FÜR DOPPEL-PFAD (/usr/usr/include):
+# Wenn der Pfad fehlerhaft generiert wird oder leer ist, erzwingen wir den korrekten Fedora-Standardpfad.
+if(NOT QHULL_FOUND OR "${QHULL_INCLUDE_DIRS}" MATCHES "/usr/usr/include" OR "${QHULL_INCLUDE_DIRS}" STREQUAL "")
+    set(QHULL_R_LIB "qhull_r")
+    set(QHULL_INCLUDE_DIR "/usr/include")
+else()
+    set(QHULL_R_LIB ${QHULL_LIBRARIES})
+    set(QHULL_INCLUDE_DIR ${QHULL_INCLUDE_DIRS})
+endif()
 
-add_library(qhull INTERFACE)
+# 2. Wir bauen die vom PrusaSlicer/SuperSlicer erwarteten Targets manuell auf
+if(NOT TARGET Qhull::qhull)
+    add_library(Qhull::qhull INTERFACE IMPORTED GLOBAL)
+    target_link_libraries(Qhull::qhull INTERFACE "${QHULL_R_LIB}")
+    target_include_directories(Qhull::qhull INTERFACE "${QHULL_INCLUDE_DIR}")
+endif()
+
+if(NOT TARGET Qhull::qhull_r)
+    add_library(Qhull::qhull_r INTERFACE IMPORTED GLOBAL)
+    target_link_libraries(Qhull::qhull_r INTERFACE Qhull::qhull)
+endif()
+
+if(NOT TARGET Qhull::qhullcpp)
+    add_library(Qhull::qhullcpp INTERFACE IMPORTED GLOBAL)
+    find_library(QHULL_CPP_LIB NAMES qhullcpp)
+    if(QHULL_CPP_LIB)
+        target_link_libraries(Qhull::qhullcpp INTERFACE "${QHULL_CPP_LIB}")
+    endif()
+endif()
+
+# 3. Wir täuschen das erfolgreiche Finden vor
+set(Qhull_FOUND TRUE)
 
 if(Qhull_FOUND)
-
-message(STATUS "Using qhull from system.")
-if(SLIC3R_STATIC)
-    slic3r_remap_configs("Qhull::qhullcpp;Qhull::qhullstatic_r" RelWithDebInfo Release)
-    if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
-        target_link_libraries(qhull INTERFACE Qhull::qhullcpp_d Qhull::qhullstatic_rd)
-    else()
-        target_link_libraries(qhull INTERFACE Qhull::qhullcpp Qhull::qhullstatic_r)
+    message(STATUS "Using qhull from system (Fedora Bypass Mode).")
+    
+    if(NOT TARGET qhull)
+        add_library(qhull INTERFACE IMPORTED GLOBAL)
     endif()
-else()
-    slic3r_remap_configs("Qhull::qhullcpp;Qhull::qhull_r" RelWithDebInfo Release)
-    target_link_libraries(qhull INTERFACE Qhull::qhullcpp Qhull::qhull_r)
-endif()
+
+    if(SLIC3R_STATIC)
+        slic3r_remap_configs("Qhull::qhullcpp;Qhull::qhullstatic_r" RelWithDebInfo Release)
+        if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+            target_link_libraries(qhull INTERFACE Qhull::qhullcpp Qhull::qhull_r)
+        else()
+            target_link_libraries(qhull INTERFACE Qhull::qhullcpp Qhull::qhull_r)
+        endif()
+    else()
+        slic3r_remap_configs("Qhull::qhullcpp;Qhull::qhull_r" RelWithDebInfo Release)
+        target_link_libraries(qhull INTERFACE Qhull::qhullcpp Qhull::qhull_r)
+    endif()
 
 else(Qhull_FOUND)
 

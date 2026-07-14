@@ -61,6 +61,17 @@ endif ()
 
 project(OrcaSlicer)
 
+# Verhindert, dass Präprozessor-Warnungen (#warning) den Build abbrechen
+add_compile_options(-Wno-error=cpp)
+add_compile_options(-Wno-deprecated-declarations)
+add_compile_options(-Wno-error=deprecated-declarations)
+
+# Erzwingt den OpenCV4-Pfad systemweit für jeden Compiler-Aufruf auf Fedora
+add_compile_options(-I/usr/include/opencv4)
+
+# Falls das Projekt intern härtere Flags erzwingt, überschreiben wir sie hier:
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error=cpp -Wno-error=deprecated-declarations")
+
 # Backward compatibility for old CMake versions
 if (CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_VERSION VERSION_LESS "3.25")
     set(LINUX ON CACHE BOOL "" FORCE)
@@ -695,7 +706,36 @@ if(APPLE AND CMAKE_VERSION VERSION_GREATER_EQUAL "4.0")
     set(OPENGL_LIBRARIES "-framework OpenGL" CACHE STRING "OpenGL framework" FORCE)
 endif()
 
-find_package(glfw3 REQUIRED)
+
+# --- ERSETZUNG FÜR ZEILE 700 (find_package(glfw)) START ---
+
+# 1. Wir nutzen Fedora's pkg-config, da find_package(glfw) auf Fedora fehlschlägt (heißt dort glfw3)
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(GLFW_PKG QUIET glfw3)
+
+if(NOT GLFW_PKG_FOUND)
+    # Manueller Fallback, falls pkg-config unerwartet fehlschlägt
+    find_library(GLFW_SYSTEM_LIBRARY NAMES glfw glfw3)
+    set(GLFW_PKG_LIBRARIES "${GLFW_SYSTEM_LIBRARY}")
+    set(GLFW_PKG_INCLUDE_DIRS "/usr/include")
+else()
+    set(GLFW_SYSTEM_LIBRARY "${GLFW_PKG_LIBRARIES}")
+endif()
+
+# 2. Wir erstellen das von OrcaSlicer erwartete "glfw"-Target als reines INTERFACE.
+# Das verhindert gleichzeitig den "IMPORTED_LOCATION not set"-Fehler bei RelWithDebInfo!
+if(NOT TARGET glfw)
+    add_library(glfw INTERFACE IMPORTED GLOBAL)
+    target_link_libraries(glfw INTERFACE "${GLFW_PKG_LIBRARIES}")
+    target_include_directories(glfw INTERFACE "${GLFW_PKG_INCLUDE_DIRS}")
+endif()
+
+# 3. Wir setzen die Variablen, die OrcaSlicer nach dem find_package-Aufruf erwartet
+set(glfw_FOUND TRUE)
+set(GLFW_FOUND TRUE)
+
+# --- ERSETZUNG ENDE ---
+
 
 # Find the Cereal serialization library
 find_package(cereal REQUIRED)
@@ -755,6 +795,20 @@ if(SLIC3R_STATIC)
     set(OPENVDB_USE_STATIC_LIBS ON)
     set(USE_BLOSC TRUE)
 endif ()
+
+# Suchen Sie Fedora's Imath-Paket im globalen Scope der Haupt-CMakeLists.txt
+find_package(Imath CONFIG REQUIRED)
+
+# Erstellen Sie das von OpenVDB gesuchte Target bedingungslos als GLOBAL-Dummy/Alias
+if(NOT TARGET IlmBase::Half)
+    add_library(IlmBase::Half INTERFACE IMPORTED GLOBAL)
+    if(TARGET Imath::Half)
+        target_link_libraries(IlmBase::Half INTERFACE Imath::Half)
+    else()
+        # Fedora's Standard-Target, das alle mathematischen Funktionen inkl. Half bündelt
+        target_link_libraries(IlmBase::Half INTERFACE Imath::Imath)
+    endif()
+endif()
 
 find_package(OpenVDB 5.0 COMPONENTS openvdb)
 if(OpenVDB_FOUND)
@@ -963,3 +1017,36 @@ set (CPACK_RESOURCE_FILE_LICENSE ${CMAKE_SOURCE_DIR}/LICENSE.txt) # must also in
 set(CPACK_WIX_UPGRADE_GUID "058245e8-20e0-4a95-9ab7-1acfe17ad511")
 set(CPACK_GENERATOR NSIS)
 include(CPack)
+#
+# Ganz am Ende der Haupt-CMakeLists.txt einfügen:
+if(TARGET glfw)
+    # Wir suchen die echte Systembibliothek auf Fedora
+    find_library(GLFW_SYSTEM_LIBRARY NAMES glfw glfw3)
+    
+    if(GLFW_SYSTEM_LIBRARY)
+        # Wir überschreiben den Typ auf INTERFACE, um den "IMPORTED_LOCATION"-Fehler komplett zu umgehen
+        set_target_properties(glfw PROPERTIES
+            IMPORTED_LINK_INTERFACE_LANGUAGES "C"
+            INTERFACE_LINK_LIBRARIES "${GLFW_SYSTEM_LIBRARY}"
+        )
+        
+        # Falls es ein IMPORTED-Target vom Typ UNKNOWN ist, füttern wir alle Konfigurationen:
+        set_property(TARGET glfw PROPERTY IMPORTED_LOCATION_RELWITHDEBINFO "${GLFW_SYSTEM_LIBRARY}")
+        set_property(TARGET glfw PROPERTY IMPORTED_LOCATION_RELEASE "${GLFW_SYSTEM_LIBRARY}")
+        set_property(TARGET glfw PROPERTY IMPORTED_LOCATION_DEBUG "${GLFW_SYSTEM_LIBRARY}")
+        set_property(TARGET glfw PROPERTY IMPORTED_LOCATION "${GLFW_SYSTEM_LIBRARY}")
+    endif()
+endif()
+
+# Fix für Fedora's OpenCV 4 Pfad-Struktur
+find_package(OpenCV REQUIRED)
+
+if(OpenCV_FOUND)
+    # Fügt den korrekten Pfad (/usr/include/opencv4) global für alle Quelldateien hinzu
+    include_directories(SYSTEM ${OpenCV_INCLUDE_DIRS})
+    
+    # Falls libslic3r das Target separat baut, verknüpfen wir es direkt
+    if(TARGET libslic3r)
+        target_include_directories(libslic3r PRIVATE ${OpenCV_INCLUDE_DIRS})
+    endif()
+endif()

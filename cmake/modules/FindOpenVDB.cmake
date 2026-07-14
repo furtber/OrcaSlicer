@@ -348,24 +348,40 @@ macro(just_fail msg)
   return()
 endmacro()
 
-find_package(IlmBase QUIET)
-if(NOT IlmBase_FOUND)
-  pkg_check_modules(IlmBase QUIET IlmBase)
-endif()
-if (IlmBase_FOUND AND NOT TARGET IlmBase::Half)
-  message(STATUS "Falling back to IlmBase found by pkg-config...")
+find_package(Imath CONFIG QUIET)
 
-  find_library(IlmHalf_LIBRARY NAMES Half)
-  if(IlmHalf_LIBRARY-NOTFOUND OR NOT IlmBase_INCLUDE_DIRS)
-    just_fail("IlmBase::Half can not be found!")
-  endif()
-  
-  add_library(IlmBase::Half UNKNOWN IMPORTED)
-  set_target_properties(IlmBase::Half PROPERTIES
-    IMPORTED_LOCATION "${IlmHalf_LIBRARY}"
-    INTERFACE_INCLUDE_DIRECTORIES "${IlmBase_INCLUDE_DIRS}")
-elseif(NOT IlmBase_FOUND)
-  just_fail("IlmBase::Half can not be found!")
+if(Imath_FOUND)
+    message(STATUS "Found modern Fedora Imath, creating compatibility target for ilmbase::half")
+    add_library(Ilmbase::Half INTERFACE IMPORTED GLOBAL)
+    
+    # Fedora exportiert Imath::Imath (enthält Half) oder direkt Imath::Half
+    if(TARGET Imath::Half)
+        target_link_libraries(Ilmbase::Half INTERFACE Imath::Half)
+    else()
+        target_link_libraries(Ilmbase::Half INTERFACE Imath::Imath)
+    endif()
+else()
+    # Fallback auf das alte ilmbase, falls Imath auf dem System fehlt
+    find_package(ilmbase QUIET)
+    if(NOT ilmbase_FOUND)
+        pkg_check_modules(ilmbase QUIET ilmbase)
+    endif()
+
+    if(ilmbase_FOUND AND NOT TARGET ilmbase::half)
+        message(STATUS "Falling back to ilmbase found by pkg-config...")
+
+        find_library(ilmhalf_library NAMES Half half)
+        if(ilmhalf_library-NOTFOUND OR NOT ilmbase_include_dirs)
+            just_fail("ilmbase::half can not be found!")
+        endif()
+
+        add_library(Ilmbase::Half UNKNOWN IMPORTED GLOBAL)
+        set_target_properties(Ilmbase::Half PROPERTIES
+            IMPORTED_LOCATION "${ilmhalf_library}"
+            INTERFACE_INCLUDE_DIRECTORIES "${ilmbase_include_dirs}")
+    elseif(NOT ilmbase_FOUND)
+        just_fail("ilmbase::half (and Imath) can not be found!")
+    endif()
 endif()
 find_package(TBB ${_quiet} ${_required} COMPONENTS tbb)
 find_package(ZLIB ${_quiet} ${_required})

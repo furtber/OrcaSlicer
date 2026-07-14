@@ -17,6 +17,7 @@ BuildRequires:  extra-cmake-modules
 BuildRequires:  file
 BuildRequires:  gcc
 BuildRequires:  gcc-c++
+BuildRequires:  ccache
 BuildRequires:  gettext
 BuildRequires:  git
 BuildRequires:  gstreamer1-devel
@@ -39,6 +40,42 @@ BuildRequires:  wget
 BuildRequires:  libcurl-devel
 BuildRequires:  procps-ng
 BuildRequires:  patchelf
+BuildRequires:  boost-devel
+BuildRequires:  eigen3-devel
+BuildRequires:  tbb-devel
+BuildRequires:  glfw-devel
+BuildRequires:  glfw
+BuildRequires:  cereal-devel
+BuildRequires:  expat-devel
+BuildRequires:  NLopt-devel
+BuildRequires:  openvdb-devel
+BuildRequires:  openvdb
+BuildRequires:  openexr-devel
+BuildRequires:  imath-devel
+BuildRequires:  CGAL-devel
+BuildRequires:  opencv-devel
+BuildRequires:  opencascade-devel
+BuildRequires:  draco-devel
+BuildRequires:  draco-static
+BuildRequires:  qhull-devel
+BuildRequires:  libqhull_r
+
+Requires:       boost
+Requires:       eigen3-lapack
+Requires:       eigen3-blas
+Requires:       tbb
+Requires:       glfw
+Requires:       cereal
+Requires:       expat
+Requires:       NLopt
+Requires:       openvdb
+Requires:       openexr
+Requires:       imath
+Requires:       CGAL
+Requires:       opencv
+Requires:       opencascade
+Requires:       draco
+Requires:       libqhull_r
 
 %global install_dir /opt/OrcaSlicer
 %global debug_package %{nil}
@@ -54,6 +91,9 @@ rm -rf build
 rm -rf deps/build
 export CXXFLAGS="${CXXFLAGS} -std=c++17 -Wno-error=deprecated-declarations"
 export CFLAGS="${CFLAGS} -Wno-error=deprecated-declarations"
+export SLIC3R_STATIC=0
+# export USE_IMATH_HALF=OFF
+export CMAKE_CCACHE=ccache
 ./build_linux.sh -s -d -r
 
 %install
