@@ -23,6 +23,8 @@
 #include <sys/shm.h>
 #endif
 
+namespace boost { namespace process { using namespace v1; }}
+
 #include <wx/clipbrd.h>
 #include "wx/evtloop.h"
 
