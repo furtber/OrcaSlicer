@@ -4,12 +4,6 @@
 #include "libslic3r/format.hpp"
 #include "libslic3r/I18N.hpp"
 
-#include <boost/process/v1.hpp>
-// Falls die Version v1.hpp nicht existiert (je nach Boost-Release), nutzen Sie stattdessen:
-// #include <boost/process.hpp>
-
-// Und stellen Sie sicher, dass der Namespace-Alias auf V1 zeigt:
-namespace process = boost::process::v1;
 
 #include <boost/algorithm/string.hpp>
 #include <boost/log/trivial.hpp>
@@ -156,9 +150,10 @@ static int run_script(const std::string &script, const std::string &gcode, std::
 
 #include <cstdlib>   // getenv()
 #include <sstream>
-#include <boost/process.hpp>
-
-namespace process = boost::process;
+// #include <boost/process.hpp>
+// namespace process = boost::process;
+#include <boost/process/v1.hpp>
+namespace process = boost::process::v1;
 
 static int run_script(const std::string &script, const std::string &gcode, std::string &std_err)
 {
